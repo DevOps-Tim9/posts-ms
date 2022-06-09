@@ -40,7 +40,6 @@ func transformListOfDAOToListOfDTO(comments []*entity.Comment) []*response.Comme
 
 	for _, value := range comments {
 		commentDto := value.CreateDto()
-
 		commentsDto = append(commentsDto, commentDto)
 	}
 
