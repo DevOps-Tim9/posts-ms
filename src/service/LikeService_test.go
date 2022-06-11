@@ -3,6 +3,7 @@ package service
 import (
 	"posts-ms/src/dto/request"
 	"posts-ms/src/repository"
+	"posts-ms/src/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,7 @@ func (suite *LikeServiceUnitTestSuite) SetupSuite() {
 
 	suite.service = LikeService{LikeRepository: suite.likeRepositoryMock,
 		PostService: suite.postServiceMock,
+		Logger:      utils.Logger(),
 	}
 }
 

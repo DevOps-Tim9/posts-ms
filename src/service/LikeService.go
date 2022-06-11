@@ -5,6 +5,8 @@ import (
 	"posts-ms/src/dto/response"
 	"posts-ms/src/entity"
 	"posts-ms/src/repository"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ILikeService interface {
@@ -16,15 +18,20 @@ type ILikeService interface {
 type LikeService struct {
 	LikeRepository repository.ILikeRepository
 	PostService    IPostService
+	Logger         *logrus.Entry
 }
 
 func (s LikeService) GetAllByPostId(id uint) []*response.LikeDto {
+	s.Logger.Info("Getting likes for post")
+
 	likes := s.LikeRepository.GetAllByPostId(id)
 
 	return s.transformListOfDAOToListOfDTO(likes)
 }
 
 func (s LikeService) Create(dto request.LikeDto) (*response.LikeDto, error) {
+	s.Logger.Info("Creating like")
+
 	like, error := s.LikeRepository.GetByUserIdAndPostId(dto.UserId, dto.PostId)
 
 	if error == nil {
@@ -61,6 +68,7 @@ func (s LikeService) Create(dto request.LikeDto) (*response.LikeDto, error) {
 }
 
 func (s LikeService) Delete(userId uint, postId uint) {
+	s.Logger.Info("Deleting like")
 
 	like, error := s.LikeRepository.GetByUserIdAndPostId(userId, postId)
 

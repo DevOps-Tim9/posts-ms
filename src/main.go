@@ -11,6 +11,7 @@ import (
 	"posts-ms/src/repository"
 	"posts-ms/src/route"
 	"posts-ms/src/service"
+	"posts-ms/src/utils"
 
 	"github.com/rs/cors"
 	"github.com/streadway/amqp"
@@ -18,9 +19,15 @@ import (
 )
 
 func main() {
+	logger := utils.Logger()
+
+	logger.Info("Connecting with DB")
+
 	dataBase, _ := config.SetupDB()
 
 	amqpServerURL := os.Getenv("AMQP_SERVER_URL")
+
+	logger.Info("Connecting on RabbitMq")
 
 	rabbit := rabbitmq.RMQProducer{
 		ConnectionString: amqpServerURL,
@@ -37,6 +44,8 @@ func main() {
 	router := route.SetupRoutes(controllerContainer)
 
 	port := os.Getenv("SERVER_PORT")
+
+	logger.Info("Starting server")
 
 	http.ListenAndServe(fmt.Sprintf(":%s", port), cors.AllowAll().Handler(router))
 }
@@ -63,9 +72,10 @@ func initializeServices(repositoryContainer config.RepositoryContainer, channel 
 		CommentRepository: repositoryContainer.CommentRepository,
 		MediaClient:       mediaClient,
 		RabbitMQChannel:   channel,
+		Logger:            utils.Logger(),
 	}
-	likeService := service.LikeService{LikeRepository: repositoryContainer.LikeRepository, PostService: postService}
-	commentService := service.CommentService{CommentRepository: repositoryContainer.CommentRepository}
+	likeService := service.LikeService{LikeRepository: repositoryContainer.LikeRepository, PostService: postService, Logger: utils.Logger()}
+	commentService := service.CommentService{CommentRepository: repositoryContainer.CommentRepository, Logger: utils.Logger()}
 
 	container := config.NewServiceContainer(
 		postService,
