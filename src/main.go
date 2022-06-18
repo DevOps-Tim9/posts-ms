@@ -57,6 +57,7 @@ func initializeControllers(serviceContainer config.ServiceContainer) config.Cont
 
 func initializeServices(repositoryContainer config.RepositoryContainer, channel *amqp.Channel) config.ServiceContainer {
 	mediaClient := client.NewMediaRESTClient()
+	userClient := client.NewUserRESTClient()
 	postService := service.PostService{
 		PostRepository:    repositoryContainer.PostRepository,
 		LikeRepository:    repositoryContainer.LikeRepository,
@@ -64,8 +65,8 @@ func initializeServices(repositoryContainer config.RepositoryContainer, channel 
 		MediaClient:       mediaClient,
 		RabbitMQChannel:   channel,
 	}
-	likeService := service.LikeService{LikeRepository: repositoryContainer.LikeRepository, PostService: postService}
-	commentService := service.CommentService{CommentRepository: repositoryContainer.CommentRepository}
+	likeService := service.LikeService{LikeRepository: repositoryContainer.LikeRepository, PostService: postService, UserRESTClient: userClient, RabbitMQChannel: channel}
+	commentService := service.CommentService{CommentRepository: repositoryContainer.CommentRepository, PostService: postService, UserRESTClient: userClient, RabbitMQChannel: channel}
 
 	container := config.NewServiceContainer(
 		postService,
