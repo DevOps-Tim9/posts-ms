@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"encoding/json"
+	"posts-ms/src/dto/request"
 	"posts-ms/src/dto/response"
 	"time"
 
@@ -44,6 +45,25 @@ func DeleteImage(id uint, channel *amqp.Channel) {
 		"DeleteImageOnMedias-MS-routing-key", // routing key
 		false,                                // mandatory
 		false,                                // immediate
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			MessageId:    uuid.String(),
+			Timestamp:    time.Now(),
+			Body:         payload,
+		})
+}
+
+func AddNotification(notification *request.NotificationDTO, channel *amqp.Channel) {
+	uuid, _ := uuid.NewV4()
+
+	payload, _ := json.Marshal(notification)
+
+	channel.Publish(
+		"AddNotification-MS-exchange",    // exchange
+		"AddNotification-MS-routing-key", // routing key
+		false,                            // mandatory
+		false,                            // immediate
 		amqp.Publishing{
 			ContentType:  "application/json",
 			DeliveryMode: amqp.Persistent,

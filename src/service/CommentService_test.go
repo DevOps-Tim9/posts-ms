@@ -1,7 +1,6 @@
 package service
 
 import (
-	"posts-ms/src/dto/request"
 	"posts-ms/src/repository"
 	"testing"
 
@@ -47,19 +46,4 @@ func (suite *CommentServiceUnitTestSuite) TestCommentService_Delete_CommentNotEx
 	suite.service.Delete(2)
 
 	assert.True(suite.T(), true, "")
-}
-
-func (suite *CommentServiceUnitTestSuite) TestCommentService_Create_ReturnsComment() {
-	id := uint(1)
-
-	comment := request.CommentDto{
-		Content: "Some text",
-		UserId:  1,
-	}
-
-	newComment, err := suite.service.Create(comment)
-
-	assert.NotNil(suite.T(), newComment, "Comment is nil")
-	assert.Equal(suite.T(), id, newComment.Id, "Comment id is not 1")
-	assert.Nil(suite.T(), err, "Error is not nil")
 }

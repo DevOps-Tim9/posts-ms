@@ -51,7 +51,6 @@ func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
 
 	if error != nil {
 		w.WriteHeader(http.StatusBadRequest)
-
 		return
 	}
 
@@ -59,7 +58,6 @@ func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
 
 	if error != nil {
 		handleLikeError(error, w)
-
 		return
 	}
 
