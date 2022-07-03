@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"posts-ms/src/entity"
 
@@ -12,17 +13,17 @@ type PostRepositoryMock struct {
 	mock.Mock
 }
 
-func (p PostRepositoryMock) Create(post entity.Post) (entity.Post, error) {
+func (p PostRepositoryMock) Create(post entity.Post, ctx context.Context) (entity.Post, error) {
 	post.ID = 1
 
 	return post, nil
 }
 
-func (p PostRepositoryMock) Delete(uint) {
+func (p PostRepositoryMock) Delete(uint, context.Context) {
 
 }
 
-func (p PostRepositoryMock) GetById(id uint) (*entity.Post, error) {
+func (p PostRepositoryMock) GetById(id uint, ctx context.Context) (*entity.Post, error) {
 	if id == 1 {
 		return nil, errors.New("")
 	} else {
@@ -39,7 +40,7 @@ func (p PostRepositoryMock) GetById(id uint) (*entity.Post, error) {
 	}
 }
 
-func (p PostRepositoryMock) GetAllByUserId(id uint) []*entity.Post {
+func (p PostRepositoryMock) GetAllByUserId(id uint, ctx context.Context) []*entity.Post {
 	if id == 1 {
 		return []*entity.Post{}
 	} else {
@@ -68,7 +69,7 @@ func (p PostRepositoryMock) GetAllByUserId(id uint) []*entity.Post {
 	}
 }
 
-func (p PostRepositoryMock) GetAllByUserIds(ids []uint) []*entity.Post {
+func (p PostRepositoryMock) GetAllByUserIds(ids []uint, ctx context.Context) []*entity.Post {
 	if ids[0] == 1 && ids[1] == 2 {
 		return []*entity.Post{}
 	} else {

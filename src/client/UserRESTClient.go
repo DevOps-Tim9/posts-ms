@@ -1,16 +1,19 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"posts-ms/src/dto/response"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 type IUserRESTClient interface {
-	GetUser(id int) (*response.UserResponseDTO, error)
+	GetUser(int, context.Context) (*response.UserResponseDTO, error)
 }
 
 type UserRESTClient struct{}
@@ -19,7 +22,11 @@ func NewUserRESTClient() UserRESTClient {
 	return UserRESTClient{}
 }
 
-func (c UserRESTClient) GetUser(id int) (*response.UserResponseDTO, error) {
+func (c UserRESTClient) GetUser(id int, ctx context.Context) (*response.UserResponseDTO, error) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Third service - Send request to fetch user by id form user-ms")
+
+	defer span.Finish()
+
 	user := response.UserResponseDTO{}
 	endpoint := fmt.Sprintf("http://%s/users/%d", os.Getenv("USER_SERVICE_DOMAIN"), id)
 

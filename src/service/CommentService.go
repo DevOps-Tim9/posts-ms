@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"posts-ms/src/client"
 	"posts-ms/src/dto/request"
@@ -9,14 +10,15 @@ import (
 	"posts-ms/src/rabbitmq"
 	"posts-ms/src/repository"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
 type ICommentService interface {
-	Create(request.CommentDto) (*response.CommentDto, error)
-	Delete(uint)
-	GetAllByPostId(uint) []*response.CommentDto
+	Create(request.CommentDto, context.Context) (*response.CommentDto, error)
+	Delete(uint, context.Context)
+	GetAllByPostId(uint, context.Context) []*response.CommentDto
 }
 
 type CommentService struct {
@@ -27,30 +29,44 @@ type CommentService struct {
 	RabbitMQChannel   *amqp.Channel
 }
 
-func (s CommentService) GetAllByPostId(id uint) []*response.CommentDto {
+func (s CommentService) GetAllByPostId(id uint, ctx context.Context) []*response.CommentDto {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Get all comments for specific post")
+
+	defer span.Finish()
+
 	s.Logger.Info("Getting comments for post")
-	comments := s.CommentRepository.GetAllByPostId(id)
+
+	comments := s.CommentRepository.GetAllByPostId(id, ctx)
 
 	return transformListOfDAOToListOfDTO(comments)
 }
 
-func (s CommentService) Create(dto request.CommentDto) (*response.CommentDto, error) {
+func (s CommentService) Create(dto request.CommentDto, ctx context.Context) (*response.CommentDto, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Create new comment for specific post")
+
+	defer span.Finish()
+
 	s.Logger.Info("Creating comment")
 
 	comment := entity.CreateComment(dto)
-	post, error := s.PostService.GetPostById(dto.PostId)
 
-	newComment, error := s.CommentRepository.Create(comment)
+	post, _ := s.PostService.GetPostById(dto.PostId, ctx)
 
-	s.AddNotification(int(dto.UserId), int(post.UserId))
+	newComment, err := s.CommentRepository.Create(comment, ctx)
 
-	return newComment.CreateDto(), error
+	s.AddNotification(int(dto.UserId), int(post.UserId), ctx)
+
+	return newComment.CreateDto(), err
 }
 
-func (s CommentService) Delete(id uint) {
+func (s CommentService) Delete(id uint, ctx context.Context) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Delete comment by id")
+
+	defer span.Finish()
+
 	s.Logger.Info("Deleting comment")
 
-	s.CommentRepository.Delete(id)
+	s.CommentRepository.Delete(id, ctx)
 }
 
 func transformListOfDAOToListOfDTO(comments []*entity.Comment) []*response.CommentDto {
@@ -64,12 +80,16 @@ func transformListOfDAOToListOfDTO(comments []*entity.Comment) []*response.Comme
 	return commentsDto
 }
 
-func (s CommentService) AddNotification(fromId int, toId int) {
-	userFrom, _ := s.UserRESTClient.GetUser(fromId)
-	userTo, _ := s.UserRESTClient.GetUser(toId)
+func (s CommentService) AddNotification(fromId int, toId int, ctx context.Context) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Service - Notify user about new comment")
+
+	defer span.Finish()
+
+	userFrom, _ := s.UserRESTClient.GetUser(fromId, ctx)
+	userTo, _ := s.UserRESTClient.GetUser(toId, ctx)
 
 	messageType := request.Comment
 	notification := request.NotificationDTO{Message: fmt.Sprintf("%s commented on your post.", userFrom.Username), UserAuth0ID: userTo.Auth0ID, NotificationType: &messageType}
 
-	rabbitmq.AddNotification(&notification, s.RabbitMQChannel)
+	rabbitmq.AddNotification(&notification, s.RabbitMQChannel, ctx)
 }

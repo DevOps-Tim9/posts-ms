@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"posts-ms/src/client"
 	"posts-ms/src/dto/request"
@@ -9,14 +10,15 @@ import (
 	"posts-ms/src/rabbitmq"
 	"posts-ms/src/repository"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
 type ILikeService interface {
-	Create(request.LikeDto) (*response.LikeDto, error)
-	Delete(uint, uint)
-	GetAllByPostId(uint) []*response.LikeDto
+	Create(request.LikeDto, context.Context) (*response.LikeDto, error)
+	Delete(uint, uint, context.Context)
+	GetAllByPostId(uint, context.Context) []*response.LikeDto
 }
 
 type LikeService struct {
@@ -27,18 +29,26 @@ type LikeService struct {
 	RabbitMQChannel *amqp.Channel
 }
 
-func (s LikeService) GetAllByPostId(id uint) []*response.LikeDto {
+func (s LikeService) GetAllByPostId(id uint, ctx context.Context) []*response.LikeDto {
 	s.Logger.Info("Getting likes for post")
 
-	likes := s.LikeRepository.GetAllByPostId(id)
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Get all likes for specific post")
+
+	defer span.Finish()
+
+	likes := s.LikeRepository.GetAllByPostId(id, ctx)
 
 	return s.transformListOfDAOToListOfDTO(likes)
 }
 
-func (s LikeService) Create(dto request.LikeDto) (*response.LikeDto, error) {
+func (s LikeService) Create(dto request.LikeDto, ctx context.Context) (*response.LikeDto, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Create new like for specific post")
+
+	defer span.Finish()
+
 	s.Logger.Info("Creating like")
 
-	like, error := s.LikeRepository.GetByUserIdAndPostId(dto.UserId, dto.PostId)
+	like, error := s.LikeRepository.GetByUserIdAndPostId(dto.UserId, dto.PostId, ctx)
 
 	if error == nil {
 		like.LikeType = entity.TypeOfLike(dto.LikeType)
@@ -46,9 +56,9 @@ func (s LikeService) Create(dto request.LikeDto) (*response.LikeDto, error) {
 		like = entity.CreateLike(dto)
 	}
 
-	newLike, _ := s.LikeRepository.Create(like)
+	newLike, _ := s.LikeRepository.Create(like, ctx)
 
-	post, error := s.PostService.GetPostById(dto.PostId)
+	post, error := s.PostService.GetPostById(dto.PostId, ctx)
 
 	if error != nil {
 		return nil, error
@@ -68,25 +78,29 @@ func (s LikeService) Create(dto request.LikeDto) (*response.LikeDto, error) {
 	post.TotalLikes = totalPositive
 	post.TotalUnlikes = totalNegative
 
-	s.PostService.CreatePost(*post)
+	s.PostService.CreatePost(*post, ctx)
 
-	s.AddNotification(int(dto.UserId), int(post.UserId), dto.LikeType)
+	s.AddNotification(int(dto.UserId), int(post.UserId), dto.LikeType, ctx)
 
 	return newLike.CreateDto(), error
 }
 
-func (s LikeService) Delete(userId uint, postId uint) {
+func (s LikeService) Delete(userId uint, postId uint, ctx context.Context) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Delete like for specific post from specific user")
+
+	defer span.Finish()
+
 	s.Logger.Info("Deleting like")
 
-	like, error := s.LikeRepository.GetByUserIdAndPostId(userId, postId)
+	like, error := s.LikeRepository.GetByUserIdAndPostId(userId, postId, ctx)
 
 	if error != nil {
 		return
 	}
 
-	s.LikeRepository.Delete(like.ID)
+	s.LikeRepository.Delete(like.ID, ctx)
 
-	post, error := s.PostService.GetPostById(postId)
+	post, error := s.PostService.GetPostById(postId, ctx)
 
 	if error != nil {
 		return
@@ -98,7 +112,7 @@ func (s LikeService) Delete(userId uint, postId uint) {
 		post.TotalUnlikes = post.TotalUnlikes - 1
 	}
 
-	s.PostService.CreatePost(*post)
+	s.PostService.CreatePost(*post, ctx)
 }
 
 func (s LikeService) transformListOfDAOToListOfDTO(likes []*entity.Like) []*response.LikeDto {
@@ -113,9 +127,13 @@ func (s LikeService) transformListOfDAOToListOfDTO(likes []*entity.Like) []*resp
 	return likesDto
 }
 
-func (s LikeService) AddNotification(fromId int, toId int, likeType int) {
-	userFrom, _ := s.UserRESTClient.GetUser(fromId)
-	userTo, _ := s.UserRESTClient.GetUser(toId)
+func (s LikeService) AddNotification(fromId int, toId int, likeType int, ctx context.Context) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Service - Notify user about new post")
+
+	defer span.Finish()
+
+	userFrom, _ := s.UserRESTClient.GetUser(fromId, ctx)
+	userTo, _ := s.UserRESTClient.GetUser(toId, ctx)
 
 	var notification request.NotificationDTO
 	messageType := request.Like
@@ -125,5 +143,5 @@ func (s LikeService) AddNotification(fromId int, toId int, likeType int) {
 		notification = request.NotificationDTO{Message: fmt.Sprintf("%s disliked your post.", userFrom.Username), UserAuth0ID: userTo.Auth0ID, NotificationType: &messageType}
 	}
 
-	rabbitmq.AddNotification(&notification, s.RabbitMQChannel)
+	rabbitmq.AddNotification(&notification, s.RabbitMQChannel, ctx)
 }

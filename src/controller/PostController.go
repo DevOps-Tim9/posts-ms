@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v8"
 )
@@ -27,6 +28,10 @@ func NewPostController(postService service.IPostService) PostController {
 }
 
 func (c PostController) GetAllByUserId(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/posts/users/{userId}")
+
+	defer span.Finish()
+
 	c.logger.Info("Getting all posts for specified user request received")
 	params := mux.Vars(r)
 
@@ -40,7 +45,7 @@ func (c PostController) GetAllByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	likes := c.PostService.GetAllByUserId(uint(id))
+	likes := c.PostService.GetAllByUserId(uint(id), ctx)
 
 	payload, _ := json.Marshal(likes)
 
@@ -52,13 +57,17 @@ func (c PostController) GetAllByUserId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c PostController) GetAllByUserIds(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/posts/users")
+
+	defer span.Finish()
+
 	c.logger.Info("Getting all posts for specified users request received")
 
 	var search request.SearchPostPageableDto
 
 	json.NewDecoder(r.Body).Decode(&search)
 
-	likes := c.PostService.GetAllByUserIds(search.Ids)
+	likes := c.PostService.GetAllByUserIds(search.Ids, ctx)
 
 	payload, _ := json.Marshal(likes)
 
@@ -70,6 +79,10 @@ func (c PostController) GetAllByUserIds(w http.ResponseWriter, r *http.Request) 
 }
 
 func (p PostController) Create(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/posts")
+
+	defer span.Finish()
+
 	p.logger.Info("Creating post request received")
 
 	r.ParseMultipartForm(32 << 20)
@@ -92,7 +105,7 @@ func (p PostController) Create(w http.ResponseWriter, r *http.Request) {
 
 	files := r.MultipartForm.File["files"]
 
-	post, err := p.PostService.Create(postDto, files)
+	post, err := p.PostService.Create(postDto, files, ctx)
 
 	if err != nil {
 		p.logger.Error("Error occured in creating post")
@@ -112,6 +125,10 @@ func (p PostController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c PostController) Delete(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/posts/{id}")
+
+	defer span.Finish()
+
 	c.logger.Info("Deleting post request received")
 
 	params := mux.Vars(r)
@@ -126,7 +143,7 @@ func (c PostController) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.PostService.Delete(uint(id))
+	c.PostService.Delete(uint(id), ctx)
 
 	c.logger.Info("Post deleted successfully")
 

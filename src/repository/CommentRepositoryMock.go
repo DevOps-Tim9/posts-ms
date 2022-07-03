@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"posts-ms/src/entity"
 
@@ -12,13 +13,13 @@ type CommentRepositoryMock struct {
 	mock.Mock
 }
 
-func (c CommentRepositoryMock) Create(comment entity.Comment) (entity.Comment, error) {
+func (c CommentRepositoryMock) Create(comment entity.Comment, ctx context.Context) (entity.Comment, error) {
 	comment.ID = 1
 
 	return comment, nil
 }
 
-func (c CommentRepositoryMock) Delete(id uint) error {
+func (c CommentRepositoryMock) Delete(id uint, ctx context.Context) error {
 	switch id {
 	case 1:
 		return nil
@@ -29,7 +30,7 @@ func (c CommentRepositoryMock) Delete(id uint) error {
 	return nil
 }
 
-func (c CommentRepositoryMock) DeleteByPostId(id uint) error {
+func (c CommentRepositoryMock) DeleteByPostId(id uint, ctx context.Context) error {
 	switch id {
 	case 1:
 		return nil
@@ -40,7 +41,7 @@ func (c CommentRepositoryMock) DeleteByPostId(id uint) error {
 	return nil
 }
 
-func (c CommentRepositoryMock) GetAllByPostId(id uint) []*entity.Comment {
+func (c CommentRepositoryMock) GetAllByPostId(id uint, ctx context.Context) []*entity.Comment {
 	switch id {
 	case 1:
 		return make([]*entity.Comment, 0)
