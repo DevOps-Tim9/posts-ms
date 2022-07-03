@@ -1,0 +1,15 @@
+{"level":"info","msg":"Deleting comment","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting comments for post","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting comments for post","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Creating like","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Creating like","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting likes for post","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting likes for post","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Creating post","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Sending request on media-ms for creating media","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting posts by user","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting posts by user","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting posts by users","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting posts by users","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting post by id","service":"","time":"2022-07-03T13:51:29+02:00"}
+{"level":"info","msg":"Getting post by id","service":"","time":"2022-07-03T13:51:29+02:00"}

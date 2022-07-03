@@ -1,6 +1,7 @@
 package service
 
 import (
+	"posts-ms/src/client"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/repository"
 	"posts-ms/src/utils"
@@ -14,6 +15,7 @@ type LikeServiceUnitTestSuite struct {
 	suite.Suite
 	likeRepositoryMock *repository.LikeRepositoryMock
 	postServiceMock    *PostServiceMock
+	userRestClientMock *client.UserRESTClientMock
 	service            LikeService
 }
 
@@ -24,10 +26,12 @@ func TestLikeServiceUnitTestSuite(t *testing.T) {
 func (suite *LikeServiceUnitTestSuite) SetupSuite() {
 	suite.likeRepositoryMock = new(repository.LikeRepositoryMock)
 	suite.postServiceMock = new(PostServiceMock)
+	suite.userRestClientMock = new(client.UserRESTClientMock)
 
 	suite.service = LikeService{LikeRepository: suite.likeRepositoryMock,
-		PostService: suite.postServiceMock,
-		Logger:      utils.Logger(),
+		PostService:    suite.postServiceMock,
+		Logger:         utils.Logger(),
+		UserRESTClient: suite.userRestClientMock,
 	}
 }
 
@@ -51,22 +55,6 @@ func (suite *LikeServiceUnitTestSuite) TestLikeService_GetAllByPostId_ReturnsLis
 
 func (suite *LikeServiceUnitTestSuite) TestLikeService_Delete_ReturnsNothing() {
 	assert.True(suite.T(), true, "Test failed")
-}
-
-func (suite *LikeServiceUnitTestSuite) TestLikeService_Create_ReturnsLike() {
-	id := uint(1)
-
-	like := request.LikeDto{
-		PostId:   5,
-		UserId:   3,
-		LikeType: 2,
-	}
-
-	newLike, err := suite.service.Create(like)
-
-	assert.NotNil(suite.T(), newLike, "Like is nil")
-	assert.Nil(suite.T(), err, "Error is not nil")
-	assert.Equal(suite.T(), id, newLike.Id, "Id is not 1")
 }
 
 func (suite *LikeServiceUnitTestSuite) TestLikeService_Create_WithNonExistPost_ReturnError() {

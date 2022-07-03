@@ -1,12 +1,16 @@
 package service
 
 import (
+	"fmt"
+	"posts-ms/src/client"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/dto/response"
 	"posts-ms/src/entity"
+	"posts-ms/src/rabbitmq"
 	"posts-ms/src/repository"
 
 	"github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
 type ILikeService interface {
@@ -16,9 +20,11 @@ type ILikeService interface {
 }
 
 type LikeService struct {
-	LikeRepository repository.ILikeRepository
-	PostService    IPostService
-	Logger         *logrus.Entry
+	LikeRepository  repository.ILikeRepository
+	PostService     IPostService
+	Logger          *logrus.Entry
+	UserRESTClient  client.IUserRESTClient
+	RabbitMQChannel *amqp.Channel
 }
 
 func (s LikeService) GetAllByPostId(id uint) []*response.LikeDto {
@@ -64,6 +70,8 @@ func (s LikeService) Create(dto request.LikeDto) (*response.LikeDto, error) {
 
 	s.PostService.CreatePost(*post)
 
+	s.AddNotification(int(dto.UserId), int(post.UserId), dto.LikeType)
+
 	return newLike.CreateDto(), error
 }
 
@@ -103,4 +111,19 @@ func (s LikeService) transformListOfDAOToListOfDTO(likes []*entity.Like) []*resp
 	}
 
 	return likesDto
+}
+
+func (s LikeService) AddNotification(fromId int, toId int, likeType int) {
+	userFrom, _ := s.UserRESTClient.GetUser(fromId)
+	userTo, _ := s.UserRESTClient.GetUser(toId)
+
+	var notification request.NotificationDTO
+	messageType := request.Like
+	if likeType == 1 {
+		notification = request.NotificationDTO{Message: fmt.Sprintf("%s liked your post.", userFrom.Username), UserAuth0ID: userTo.Auth0ID, NotificationType: &messageType}
+	} else {
+		notification = request.NotificationDTO{Message: fmt.Sprintf("%s disliked your post.", userFrom.Username), UserAuth0ID: userTo.Auth0ID, NotificationType: &messageType}
+	}
+
+	rabbitmq.AddNotification(&notification, s.RabbitMQChannel)
 }

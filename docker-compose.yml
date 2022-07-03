@@ -6,7 +6,8 @@ services:
     restart: always
     networks:
       - posts-ms
-    environment:
+      - network-for-ms
+    environment: 
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
@@ -17,7 +18,7 @@ services:
       retries: 3
       start_period: 30s
     ports:
-      - "5432:5432"
+      - "5436:5432"
     volumes:
       - data:/var/lib/postgresql/data
 
@@ -38,6 +39,7 @@ services:
       DATABASE_PORT: ${DATABASE_PORT}
       SERVER_PORT: ${SERVER_PORT}
       AMQP_SERVER_URL: ${AMQP_SERVER_URL}
+      USER_SERVICE_DOMAIN: ${USER_SERVICE_DOMAIN}
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
