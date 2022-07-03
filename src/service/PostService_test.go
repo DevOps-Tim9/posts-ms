@@ -7,6 +7,7 @@ import (
 	"posts-ms/src/dto/request"
 	"posts-ms/src/entity"
 	"posts-ms/src/repository"
+	"posts-ms/src/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,7 +30,9 @@ func (suite *PostServiceUnitTestSuite) SetupSuite() {
 	suite.mediaRestClientMock = new(client.MediaRestClientMock)
 
 	suite.service = PostService{PostRepository: suite.postRepositoryMock,
-		MediaClient: suite.mediaRestClientMock}
+		MediaClient: suite.mediaRestClientMock,
+		Logger:      utils.Logger(),
+	}
 }
 
 func (suite *PostServiceUnitTestSuite) TestNewPostService() {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"posts-ms/src/repository"
+	"posts-ms/src/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestCommentServiceUnitTestSuite(t *testing.T) {
 func (suite *CommentServiceUnitTestSuite) SetupSuite() {
 	suite.commentRepositoryMock = new(repository.CommentRepositoryMock)
 
-	suite.service = CommentService{CommentRepository: suite.commentRepositoryMock}
+	suite.service = CommentService{CommentRepository: suite.commentRepositoryMock, Logger: utils.Logger()}
 }
 
 func (suite *CommentServiceUnitTestSuite) TestNewCommentService() {

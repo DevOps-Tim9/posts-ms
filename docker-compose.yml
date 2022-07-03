@@ -21,7 +21,7 @@ services:
       - "5436:5432"
     volumes:
       - data:/var/lib/postgresql/data
-      
+
   posts-server:
     build:
       context: .
@@ -31,7 +31,7 @@ services:
     networks:
       - posts-ms
       - network-for-ms
-    environment: 
+    environment:
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_DOMAIN: ${DATABASE_DOMAIN}
@@ -41,14 +41,30 @@ services:
       AMQP_SERVER_URL: ${AMQP_SERVER_URL}
       USER_SERVICE_DOMAIN: ${USER_SERVICE_DOMAIN}
     ports:
-    - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       database:
         condition: service_healthy
+    volumes:
+      - logs:/root/logs
+
+  promtail:
+    image: grafana/promtail:latest
+    networks:
+      - posts-ms
+      - network-for-ms
+    volumes:
+      - "./promtail:/etc/promtail"
+      - "/var/log:/var/log"
+      - logs:/var/logs
+    command: -config.file=/etc/promtail/promtail.yml
+    restart: always
 
 volumes:
   data:
     name: posts-ms-database
+  logs:
+    name: posts-logs
 
 networks:
   posts-ms:
