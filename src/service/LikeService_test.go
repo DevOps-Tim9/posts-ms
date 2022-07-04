@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"posts-ms/src/client"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/repository"
@@ -40,14 +41,14 @@ func (suite *LikeServiceUnitTestSuite) TestNewLikeService() {
 }
 
 func (suite *LikeServiceUnitTestSuite) TestLikeService_GetAllByPostId_ReturnsEmptyList() {
-	likes := suite.service.GetAllByPostId(1)
+	likes := suite.service.GetAllByPostId(1, context.TODO())
 
 	assert.NotNil(suite.T(), likes, "Likes are nil")
 	assert.Equal(suite.T(), 0, len(likes), "Length of likes is not 0")
 }
 
 func (suite *LikeServiceUnitTestSuite) TestLikeService_GetAllByPostId_ReturnsListOfLikes() {
-	likes := suite.service.GetAllByPostId(2)
+	likes := suite.service.GetAllByPostId(2, context.TODO())
 
 	assert.NotNil(suite.T(), likes, "Likes are nil")
 	assert.Equal(suite.T(), 2, len(likes), "Length of likes is not 2")
@@ -64,7 +65,7 @@ func (suite *LikeServiceUnitTestSuite) TestLikeService_Create_WithNonExistPost_R
 		LikeType: 2,
 	}
 
-	newLike, err := suite.service.Create(like)
+	newLike, err := suite.service.Create(like, context.TODO())
 
 	assert.NotNil(suite.T(), err, "Error is nil")
 	assert.Nil(suite.T(), newLike, "Like is not nil")
@@ -77,7 +78,7 @@ func (suite *LikeServiceUnitTestSuite) TestLikeService_Create_WithNonExistPostAn
 		LikeType: 2,
 	}
 
-	newLike, err := suite.service.Create(like)
+	newLike, err := suite.service.Create(like, context.TODO())
 
 	assert.NotNil(suite.T(), err, "Error is nil")
 	assert.Nil(suite.T(), newLike, "Like is not nil")

@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v8"
 )
@@ -27,6 +28,10 @@ func NewLikeController(likeService service.ILikeService) LikeController {
 }
 
 func (c LikeController) GetAllByPostId(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/likes/posts/{postId}")
+
+	defer span.Finish()
+
 	c.logger.Info("Getting all likes for specified post request received")
 
 	params := mux.Vars(r)
@@ -43,7 +48,7 @@ func (c LikeController) GetAllByPostId(w http.ResponseWriter, r *http.Request) {
 
 	c.logger.Info("Returning list of likes for specified post")
 
-	likes := c.LikeService.GetAllByPostId(uint(id))
+	likes := c.LikeService.GetAllByPostId(uint(id), ctx)
 
 	payload, _ := json.Marshal(likes)
 
@@ -53,6 +58,10 @@ func (c LikeController) GetAllByPostId(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/likes")
+
+	defer span.Finish()
+
 	c.logger.Info("Creating like request received")
 	var likeDto request.LikeDto
 
@@ -65,7 +74,7 @@ func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newLike, error := c.LikeService.Create(likeDto)
+	newLike, error := c.LikeService.Create(likeDto, ctx)
 
 	if error != nil {
 		c.logger.Error("Error occured in creating like")
@@ -85,6 +94,10 @@ func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c LikeController) Delete(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/likes/users/{userId}/posts/{postId}")
+
+	defer span.Finish()
+
 	c.logger.Info("Deleting like request received")
 
 	params := mux.Vars(r)
@@ -111,7 +124,7 @@ func (c LikeController) Delete(w http.ResponseWriter, r *http.Request) {
 
 	c.logger.Info("Like deleted successfully")
 
-	c.LikeService.Delete(uint(userId), uint(postId))
+	c.LikeService.Delete(uint(userId), uint(postId), ctx)
 
 	w.WriteHeader(http.StatusNoContent)
 }

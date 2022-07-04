@@ -1,12 +1,14 @@
 package rabbitmq
 
 import (
+	"context"
 	"encoding/json"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/dto/response"
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/opentracing/opentracing-go"
 	"github.com/streadway/amqp"
 )
 
@@ -30,7 +32,11 @@ func (r RMQProducer) StartRabbitMQ() (*amqp.Channel, error) {
 	return channelRabbitMQ, err
 }
 
-func DeleteImage(id uint, channel *amqp.Channel) {
+func DeleteImage(id uint, channel *amqp.Channel, ctx context.Context) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Third service (rabbitmq) - Send request to media-ms for deleting media")
+
+	defer span.Finish()
+
 	uuid, _ := uuid.NewV4()
 
 	media := response.MediaDto{
@@ -54,7 +60,11 @@ func DeleteImage(id uint, channel *amqp.Channel) {
 		})
 }
 
-func AddNotification(notification *request.NotificationDTO, channel *amqp.Channel) {
+func AddNotification(notification *request.NotificationDTO, channel *amqp.Channel, ctx context.Context) {
+	span, _ := opentracing.StartSpanFromContext(ctx, "Third service (rabbitmq) - Send request to user-ms for notifying user")
+
+	defer span.Finish()
+
 	uuid, _ := uuid.NewV4()
 
 	payload, _ := json.Marshal(notification)

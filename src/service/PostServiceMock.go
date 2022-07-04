@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"mime/multipart"
 	"posts-ms/src/dto/request"
@@ -15,19 +16,19 @@ type PostServiceMock struct {
 	mock.Mock
 }
 
-func (p PostServiceMock) Create(request.PostDto, []*multipart.FileHeader) (*response.PostDto, error) {
+func (p PostServiceMock) Create(request.PostDto, []*multipart.FileHeader, context.Context) (*response.PostDto, error) {
 	return nil, nil
 }
 
-func (p PostServiceMock) CreatePost(entity.Post) (*entity.Post, error) {
+func (p PostServiceMock) CreatePost(entity.Post, context.Context) (*entity.Post, error) {
 	return nil, nil
 }
 
-func (p PostServiceMock) Delete(uint) {
+func (p PostServiceMock) Delete(uint, context.Context) {
 
 }
 
-func (p PostServiceMock) GetById(id uint) (*response.PostDto, error) {
+func (p PostServiceMock) GetById(id uint, ctx context.Context) (*response.PostDto, error) {
 	switch id {
 	case 1:
 		return nil, errors.New("")
@@ -42,7 +43,7 @@ func (p PostServiceMock) GetById(id uint) (*response.PostDto, error) {
 	}, nil
 }
 
-func (p PostServiceMock) GetPostById(id uint) (*entity.Post, error) {
+func (p PostServiceMock) GetPostById(id uint, ctx context.Context) (*entity.Post, error) {
 	switch id {
 	case 1:
 		return nil, errors.New("")
@@ -59,10 +60,10 @@ func (p PostServiceMock) GetPostById(id uint) (*entity.Post, error) {
 	}, nil
 }
 
-func (p PostServiceMock) GetAllByUserId(uint) []*response.PostDto {
+func (p PostServiceMock) GetAllByUserId(uint, context.Context) []*response.PostDto {
 	return nil
 }
 
-func (p PostServiceMock) GetAllByUserIds([]uint) []*response.PostDto {
+func (p PostServiceMock) GetAllByUserIds([]uint, context.Context) []*response.PostDto {
 	return nil
 }

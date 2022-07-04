@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/go-playground/validator.v8"
 )
@@ -27,6 +28,10 @@ func NewCommentController(commentService service.ICommentService) CommentControl
 }
 
 func (c CommentController) GetAllByPostId(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/comments/posts/{postId}")
+
+	defer span.Finish()
+
 	c.logger.Info("Getting comments for specified post request received")
 	params := mux.Vars(r)
 
@@ -38,7 +43,7 @@ func (c CommentController) GetAllByPostId(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	comments := c.CommentService.GetAllByPostId(uint(id))
+	comments := c.CommentService.GetAllByPostId(uint(id), ctx)
 
 	payload, _ := json.Marshal(comments)
 
@@ -50,6 +55,10 @@ func (c CommentController) GetAllByPostId(w http.ResponseWriter, r *http.Request
 }
 
 func (c CommentController) Create(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/comments")
+
+	defer span.Finish()
+
 	c.logger.Info("Creating comment request received")
 
 	var commentDto request.CommentDto
@@ -64,7 +73,7 @@ func (c CommentController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newLike, error := c.CommentService.Create(commentDto)
+	newLike, error := c.CommentService.Create(commentDto, ctx)
 
 	if error != nil {
 		c.logger.Error("Error occured in creating comment")
@@ -83,6 +92,10 @@ func (c CommentController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c CommentController) Delete(w http.ResponseWriter, r *http.Request) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "Handle /api/comments/{id}")
+
+	defer span.Finish()
+
 	c.logger.Info("Deleting comment request received")
 
 	params := mux.Vars(r)
@@ -97,7 +110,7 @@ func (c CommentController) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.CommentService.Delete(uint(id))
+	c.CommentService.Delete(uint(id), ctx)
 
 	c.logger.Info("Deleting comment was successful")
 

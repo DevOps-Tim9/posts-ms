@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"mime/multipart"
 	"net/textproto"
 	"posts-ms/src/client"
@@ -42,7 +43,7 @@ func (suite *PostServiceUnitTestSuite) TestNewPostService() {
 func (suite *PostServiceUnitTestSuite) TestPostService_GetById_ReturnPost() {
 	id := uint(2)
 
-	post, err := suite.service.GetById(2)
+	post, err := suite.service.GetById(2, context.TODO())
 
 	assert.NotNil(suite.T(), post, "Post is nil")
 	assert.Nil(suite.T(), err, "Error is not nil")
@@ -50,35 +51,35 @@ func (suite *PostServiceUnitTestSuite) TestPostService_GetById_ReturnPost() {
 }
 
 func (suite *PostServiceUnitTestSuite) TestPostService_GetById_ReturnError() {
-	post, err := suite.service.GetById(1)
+	post, err := suite.service.GetById(1, context.TODO())
 
 	assert.NotNil(suite.T(), err, "Error is nil")
 	assert.Nil(suite.T(), post, "Post is not nil")
 }
 
 func (suite *PostServiceUnitTestSuite) TestPostService_GetAllByUserId_ReturnEmptyList() {
-	posts := suite.service.GetAllByUserId(1)
+	posts := suite.service.GetAllByUserId(1, context.TODO())
 
 	assert.NotNil(suite.T(), posts, "Posts are nil")
 	assert.Equal(suite.T(), 0, len(posts), "Length of posts not 0")
 }
 
 func (suite *PostServiceUnitTestSuite) TestPostService_GetAllByUserId_ReturnListOfPosts() {
-	posts := suite.service.GetAllByUserId(2)
+	posts := suite.service.GetAllByUserId(2, context.TODO())
 
 	assert.NotNil(suite.T(), posts, "Posts are nil")
 	assert.Equal(suite.T(), 2, len(posts), "Length of posts not 2")
 }
 
 func (suite *PostServiceUnitTestSuite) TestPostService_GetAllByUsersId_ReturnEmptyList() {
-	posts := suite.service.GetAllByUserIds([]uint{1, 2})
+	posts := suite.service.GetAllByUserIds([]uint{1, 2}, context.TODO())
 
 	assert.NotNil(suite.T(), posts, "Posts are nil")
 	assert.Equal(suite.T(), 0, len(posts), "Length of posts not 0")
 }
 
 func (suite *PostServiceUnitTestSuite) TestPostService_GetAllByUsersId_ReturnListOfPosts() {
-	posts := suite.service.GetAllByUserIds([]uint{2, 6})
+	posts := suite.service.GetAllByUserIds([]uint{2, 6}, context.TODO())
 
 	assert.NotNil(suite.T(), posts, "Posts are nil")
 	assert.Equal(suite.T(), 2, len(posts), "Length of posts not 2")
@@ -95,7 +96,7 @@ func (suite *PostServiceUnitTestSuite) TestPostService_CreatePost_ReturnPost() {
 		TotalUnlikes: 0,
 	}
 
-	newPost, err := suite.service.CreatePost(post)
+	newPost, err := suite.service.CreatePost(post, context.TODO())
 
 	assert.NotNil(suite.T(), newPost, "Posts are nil")
 	assert.Nil(suite.T(), err, "Error is not nil")
@@ -116,7 +117,7 @@ func (suite *PostServiceUnitTestSuite) TestPostService_Create_ReturnPost() {
 			Header:   textproto.MIMEHeader{},
 			Size:     0,
 		},
-	})
+	}, context.TODO())
 
 	assert.NotNil(suite.T(), newPost, "Posts are nil")
 	assert.Nil(suite.T(), err, "Error is not nil")

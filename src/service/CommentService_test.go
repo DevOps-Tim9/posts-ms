@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"posts-ms/src/repository"
 	"posts-ms/src/utils"
 	"testing"
@@ -30,21 +31,21 @@ func (suite *CommentServiceUnitTestSuite) TestNewCommentService() {
 }
 
 func (suite *CommentServiceUnitTestSuite) TestCommentService_GetAllByPostId_ReturnsEmptyList() {
-	comments := suite.service.GetAllByPostId(1)
+	comments := suite.service.GetAllByPostId(1, context.TODO())
 
 	assert.NotNil(suite.T(), comments, "Comments are nil")
 	assert.Equal(suite.T(), 0, len(comments), "Length of comments is not 0")
 }
 
 func (suite *CommentServiceUnitTestSuite) TestCommentService_GetAllByPostId_ReturnsListOfComments() {
-	comments := suite.service.GetAllByPostId(2)
+	comments := suite.service.GetAllByPostId(2, context.TODO())
 
 	assert.NotNil(suite.T(), comments, "Comments are nil")
 	assert.Equal(suite.T(), 2, len(comments), "Length of comments is not 2")
 }
 
 func (suite *CommentServiceUnitTestSuite) TestCommentService_Delete_CommentNotExist() {
-	suite.service.Delete(2)
+	suite.service.Delete(2, context.TODO())
 
 	assert.True(suite.T(), true, "")
 }
