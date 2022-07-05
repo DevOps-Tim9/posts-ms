@@ -41,6 +41,8 @@ services:
     depends_on:
       medias-database:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   users-database:
     image: postgres:13
@@ -89,6 +91,21 @@ services:
       users-database:
         condition: service_healthy
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    networks:
+      - network-for-ms
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    ports:
+      - 15672
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 5s
+      timeout: 15s
+      retries: 5
+    restart: always
+
   database-test:
     image: postgres:13
     networks:
@@ -128,6 +145,7 @@ services:
       - medias-server
       - users-server
       - database-test
+      - rabbitmq
 
 networks:
   users-ms:
