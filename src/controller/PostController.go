@@ -2,11 +2,13 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/service"
 	"posts-ms/src/utils"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -91,9 +93,9 @@ func (p PostController) Create(w http.ResponseWriter, r *http.Request) {
 
 	postDtoJSON := r.Form["post"][0]
 
-	error := p.validate.Struct(postDto)
+	p.validate.Struct(postDto)
 
-	error = json.Unmarshal([]byte(postDtoJSON), &postDto)
+	error := json.Unmarshal([]byte(postDtoJSON), &postDto)
 
 	if error != nil {
 		p.logger.Error("Error occured in creating post")
@@ -110,6 +112,8 @@ func (p PostController) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		p.logger.Error("Error occured in creating post")
 
+		AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), "Post unsuccessfully created")
+
 		handleMunicipalityError(err, w)
 
 		return
@@ -118,6 +122,8 @@ func (p PostController) Create(w http.ResponseWriter, r *http.Request) {
 	payload, _ := json.Marshal(post)
 
 	p.logger.Info("Post created successfully")
+
+	AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), "Post successfully created")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -138,6 +144,8 @@ func (c PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	if error != nil {
 		c.logger.Error("Error occured in deleting post")
 
+		AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), fmt.Sprintf("Post with id %d unsuccessfully deleted", id))
+
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -146,6 +154,8 @@ func (c PostController) Delete(w http.ResponseWriter, r *http.Request) {
 	c.PostService.Delete(uint(id), ctx)
 
 	c.logger.Info("Post deleted successfully")
+
+	AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), fmt.Sprintf("Post with id %d successfully deleted", id))
 
 	w.WriteHeader(http.StatusNoContent)
 }

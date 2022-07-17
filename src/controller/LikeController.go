@@ -2,11 +2,13 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/service"
 	"posts-ms/src/utils"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -79,6 +81,8 @@ func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
 	if error != nil {
 		c.logger.Error("Error occured in creating like")
 
+		AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), "Like unsuccessfully created")
+
 		handleLikeError(error, w)
 		return
 	}
@@ -86,6 +90,8 @@ func (c LikeController) Create(w http.ResponseWriter, r *http.Request) {
 	payload, _ := json.Marshal(newLike)
 
 	c.logger.Info("Like created successfully")
+
+	AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), "Like successfully created")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -123,6 +129,8 @@ func (c LikeController) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.logger.Info("Like deleted successfully")
+
+	AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), fmt.Sprintf("Like for post with id %d of user with id %d successfully deleted", postId, userId))
 
 	c.LikeService.Delete(uint(userId), uint(postId), ctx)
 
