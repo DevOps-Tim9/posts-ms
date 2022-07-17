@@ -1,12 +1,16 @@
 package controller
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	"posts-ms/src/dto/request"
 	"posts-ms/src/service"
 	"posts-ms/src/utils"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
@@ -77,6 +81,9 @@ func (c CommentController) Create(w http.ResponseWriter, r *http.Request) {
 
 	if error != nil {
 		c.logger.Error("Error occured in creating comment")
+
+		AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), "Comment unsuccessfully created")
+
 		handleCommentError(error, w)
 
 		return
@@ -85,6 +92,8 @@ func (c CommentController) Create(w http.ResponseWriter, r *http.Request) {
 	payload, _ := json.Marshal(newLike)
 
 	c.logger.Info("Comment created successfully")
+
+	AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), "Comment successfully created")
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -105,6 +114,8 @@ func (c CommentController) Delete(w http.ResponseWriter, r *http.Request) {
 	if error != nil {
 		c.logger.Error("Error occured in deleting comment")
 
+		AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), fmt.Sprintf("Comment with id %d unsuccessfully deleted", id))
+
 		w.WriteHeader(http.StatusBadRequest)
 
 		return
@@ -114,6 +125,8 @@ func (c CommentController) Delete(w http.ResponseWriter, r *http.Request) {
 
 	c.logger.Info("Deleting comment was successful")
 
+	AddSystemEvent(time.Now().Format("2006-01-02 15:04:05"), fmt.Sprintf("Comment with id %d successfully deleted", id))
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -121,4 +134,26 @@ func handleCommentError(error error, w http.ResponseWriter) http.ResponseWriter 
 	w.WriteHeader(http.StatusBadRequest)
 
 	return w
+}
+
+func AddSystemEvent(time string, message string) error {
+	logger := utils.Logger()
+	event := request.EventRequestDTO{
+		Timestamp: time,
+		Message:   message,
+	}
+
+	b, _ := json.Marshal(&event)
+	endpoint := os.Getenv("EVENTS_MS")
+	logger.Info("Sending system event to events-ms")
+	req, _ := http.NewRequest("POST", endpoint, bytes.NewBuffer(b))
+	req.Header.Set("content-type", "application/json")
+
+	_, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logger.Debug("Error happened during sending system event")
+		return err
+	}
+
+	return nil
 }
