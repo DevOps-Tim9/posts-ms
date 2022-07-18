@@ -1,0 +1,205 @@
+version: "3.7"
+
+services:
+  medias-database:
+    image: postgres:13
+    restart: always
+    networks:
+      - medias-ms
+      - network-for-ms
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: medias-ms
+    healthcheck:
+      test: pg_isready -U postgres -d medias-ms
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    ports:
+      - 5432
+
+  medias-server:
+    container_name: medias-server
+    build:
+      context: 'https://github.com/DevOps-Tim9/medias-ms.git#develop'
+      dockerfile: Dockerfile
+    networks:
+      - medias-ms
+      - network-for-ms
+    environment:
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: admin
+      DATABASE_DOMAIN: medias-database
+      DATABASE_SCHEMA: medias-ms
+      DATABASE_PORT: 5432
+      SERVER_PORT: 8082
+      AMQP_SERVER_URL: amqp://guest:guest@rabbitmq:5673/
+    ports:
+      - 8082
+    depends_on:
+      medias-database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  users-database:
+    image: postgres:13
+    restart: always
+    networks:
+      - users-ms
+      - network-for-ms
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: DevOps-Users
+    healthcheck:
+      test: pg_isready -U postgres -d DevOps-Users
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    ports:
+      - 5432
+    volumes:
+      - ./sql/create_user_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
+
+  users-server:
+    container_name: users-ms-users-server-1
+    build:
+      context: 'https://github.com/DevOps-Tim9/users-ms.git#develop'
+      dockerfile: Dockerfile
+    networks:
+      - users-ms
+      - network-for-ms
+    environment:
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: admin
+      DATABASE_DOMAIN: users-database
+      DATABASE_SCHEMA: DevOps-Users
+      DATABASE_PORT: 5432
+      SERVER_PORT: 9093
+      AMQP_SERVER_URL: amqp://guest:guest@rabbitmq:5673/
+      AUTH0_DOMAIN: dev-4l1tkzmy.eu.auth0.com
+      AUTH0_CLIENT_ID: Vg6o1mlxhhDL9xIz463XZe18rv4XrQ5Z
+      AUTH0_CLIENT_SECRET: 0sAaZoVqJhkZ564jDhcY9WB7SoLbZIS02BU4uNu8qxJdX3bofH19a70d4jhQob6Q
+      AUTH0_AUDIENCE: https://dev-4l1tkzmy.eu.auth0.com/api/v2/
+    ports:
+      - 9093
+    depends_on:
+      users-database:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    networks:
+      - network-for-ms
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    ports:
+      - 15672
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 5s
+      timeout: 15s
+      retries: 5
+    restart: always
+
+  database-events-test:
+    image: postgres:13
+    restart: always
+    networks:
+      - events-ms
+      - network-for-ms
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: SystemEvents-test
+    healthcheck:
+      test: pg_isready -U postgres -d SystemEvents-test
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    ports:
+      - "5451:5432"
+
+  events-server:
+    build:
+      context: 'https://github.com/DevOps-Tim9/events-ms.git#develop'
+      dockerfile: Dockerfile
+    restart: on-failure
+    networks:
+      - events-ms
+      - network-for-ms
+    environment:
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: admin
+      DATABASE_DOMAIN: database-events-test
+      DATABASE_SCHEMA: SystemEvents-test
+      DATABASE_PORT: 5432
+      SERVER_PORT: 9081
+    ports:
+      - "9081:9081"
+    depends_on:
+      database-events-test:
+        condition: service_healthy
+
+  database-test:
+    image: postgres:13
+    networks:
+      - posts-ms-test
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: posts-ms-test
+    healthcheck:
+      test: pg_isready -U postgres -d posts-ms-test
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    ports:
+      - 5432
+
+  posts-server-test:
+    build:
+      dockerfile: Dockerfile.test
+      context: .
+    networks:
+      - posts-ms-test
+      - network-for-ms
+    environment:
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: admin
+      DATABASE_DOMAIN: database-test
+      DATABASE_SCHEMA: posts-ms-test
+      DATABASE_PORT: 5432
+      SERVER_PORT: 8082
+      AMQP_SERVER_URL: amqp://guest:guest@rabbitmq:5673/
+      USER_SERVICE_DOMAIN: users-ms-users-server-1:9093
+      EVENTS_MS: http://localhost:9081/events
+    ports:
+      - 8082
+    depends_on:
+      - medias-server
+      - users-server
+      - database-test
+      - rabbitmq
+
+networks:
+  events-ms:
+    name: events-ms
+    driver: bridge
+  users-ms:
+    name: users-ms
+    driver: bridge
+  medias-ms:
+    name: medias-ms
+    driver: bridge
+  posts-ms-test:
+    name: posts-ms-test
+    driver: bridge
+  network-for-ms:
+    name: network-for-ms
